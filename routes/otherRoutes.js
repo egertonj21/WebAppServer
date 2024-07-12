@@ -16,6 +16,10 @@ import {
     getColours,
     getLogs,
     getSensorStatus,
+    getAllSensorAwakeInfo,
+    updateSensorStatus,
+    getMute,
+    updateMute,
 } from "../controllers/otherControllers.js";
 
 const router = express.Router();
@@ -37,6 +41,10 @@ export default (connection) => {
     router.get("/colours", (req, res) => getColours(connection, req, res));
     router.get("/logs", (req, res) => getLogs(connection, req, res));
     router.get("/sensor-status", (req, res) => getSensorStatus(connection, req, res));
+    router.get("/sensorsAwake", (req, res) => getAllSensorAwakeInfo(connection, req, res));
+    router.post("/sensor-status", (req, res) => updateSensorStatus(connection, req, res));
+    router.get("/mute", (req, res) => getMute(connection, req, res));
+    router.post("/mute", (req, res) => updateMute(connection, req, res));
 
     return router;
 };

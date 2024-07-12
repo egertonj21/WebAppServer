@@ -283,3 +283,74 @@ export const getSensorStatus = async (connection, req, res) => {
         res.status(500).send("Failed to fetch sensor status");
     }
 };
+
+export const getAllSensorAwakeInfo = async (connection, req, res) => {
+    try {
+        const [rows] = await connection.execute("SELECT * FROM all_sensors_status");
+        res.json(rows);
+    } catch (error) {
+        console.error("Failed to fetch sensor_light entries:", error);
+        res.status(500).send("Failed to fetch sensor_light entries");
+    }
+};
+
+export const updateSensorStatus = async (connection, req, res) => {
+    const { sensors_on } = req.body;
+
+    if (sensors_on === undefined) {
+        return res.status(400).send("Invalid input data");
+    }
+
+    try {
+        // Delete all existing entries in the all_sensors_status table
+        await connection.execute("DELETE FROM all_sensors_status");
+
+        // Insert the new status
+        const [result] = await connection.execute(
+            "INSERT INTO all_sensors_status (sensors_on) VALUES (?)",
+            [sensors_on]
+        );
+
+        res.status(201).send(`Sensor status updated with ID: ${result.insertId}`);
+    } catch (error) {
+        console.error("Failed to update sensor status:", error);
+        res.status(500).send("Failed to update sensor status");
+    }
+};
+
+export const getMute = async (connection, req, res) => {
+    try {
+        const [rows] = await connection.execute("SELECT * FROM mute");
+        res.json(rows);
+    } catch (error) {
+        console.error("Failed to fetch sensor_light entries:", error);
+        res.status(500).send("Failed to fetch sensor_light entries");
+    }
+};
+
+export const updateMute = async (connection, req, res) => {
+    const { muted } = req.body;
+
+    if (muted === undefined) {
+        return res.status(400).send("Invalid input data");
+    }
+
+    try {
+        // Delete all existing entries in the mute table
+        await connection.execute("DELETE FROM mute");
+
+        // Insert the new status
+        const [result] = await connection.execute(
+            "INSERT INTO mute (mute) VALUES (?)",  // Change 'muted' to 'mute' if that is the correct column name
+            [muted]
+        );
+
+        res.status(201).send(`Mute status updated with ID: ${result.insertId}`);
+    } catch (error) {
+        console.error("Failed to update mute status:", error);
+        res.status(500).send("Failed to update mute status");
+    }
+};
+
+
+
