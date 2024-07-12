@@ -83,7 +83,7 @@ export const getSensorLight = async (connection, req, res) => {
 export const getSensorLightById = async (connection, req, res) => {
     const { id } = req.params;
     try {
-        const [rows] = await connection.execute("SELECT * FROM sensor_light WHERE sensor_light_ID = ?", [id]);
+        const [rows] = await connection.execute("SELECT * FROM sensor_light WHERE LED_strip_ID = ?", [id]);
         if (rows.length > 0) {
             res.json(rows[0]);
         } else {
@@ -114,27 +114,24 @@ export const createSensorLight = async (connection, req, res) => {
     }
 };
 
-export const updateSensorLightByName = async (connection, req, res) => {
-    const { name } = req.params;
-    const { sensor_name, LED_strip_name, range_name, colour_name } = req.body;
+export const updateSensorLightColour = async (connection, req, res) => {
+    const { LED_strip_ID, range_ID } = req.params;
+    const { colour_name } = req.body;
 
-    if (!sensor_name || !LED_strip_name || !range_name || !colour_name) {
+    if (!colour_name) {
         return res.status(400).send("Invalid input data");
     }
 
     try {
-        const [[sensor]] = await connection.execute("SELECT sensor_ID FROM sensor WHERE sensor_name = ?", [sensor_name]);
-        const [[ledStrip]] = await connection.execute("SELECT LED_strip_ID FROM LED_strip WHERE LED_strip_name = ?", [LED_strip_name]);
-        const [[range]] = await connection.execute("SELECT range_ID FROM sensor_range WHERE range_name = ?", [range_name]);
         const [[colour]] = await connection.execute("SELECT colour_ID FROM colour WHERE colour_name = ?", [colour_name]);
 
-        if (!sensor || !ledStrip || !range || !colour) {
-            return res.status(404).send("One or more specified names do not exist");
+        if (!colour) {
+            return res.status(404).send("Specified colour does not exist");
         }
 
         const [result] = await connection.execute(
-            "UPDATE sensor_light SET sensor_ID = ?, LED_strip_ID = ?, range_ID = ?, colour_ID = ? WHERE sensor_light_name = ?",
-            [sensor.sensor_ID, ledStrip.LED_strip_ID, range.range_ID, colour.colour_ID, name]
+            "UPDATE sensor_light SET colour_ID = ? WHERE LED_strip_ID = ? AND range_ID = ?",
+            [colour.colour_ID, LED_strip_ID, range_ID]
         );
 
         if (result.affectedRows === 0) {
@@ -147,6 +144,7 @@ export const updateSensorLightByName = async (connection, req, res) => {
         res.status(500).send("Failed to update sensor_light entry");
     }
 };
+
 
 export const getSelectedOutput = async (connection, req, res) => {
     const { sensor_ID } = req.params;
@@ -219,20 +217,6 @@ export const getLightDurations = async (connection, req, res) => {
     }
 };
 
-export const getLightDurationById = async (connection, req, res) => {
-    const { id } = req.params;
-    try {
-        const [rows] = await connection.execute("SELECT * FROM light_duration WHERE light_duration_ID = ?", [id]);
-        if (rows.length > 0) {
-            res.json(rows[0]);
-        } else {
-            res.status(404).send("Light duration entry not found");
-        }
-    } catch (error) {
-        console.error("Failed to fetch light_duration entry:", error);
-        res.status(500).send("Failed to fetch light_duration entry");
-    }
-};
 
 export const createLightDuration = async (connection, req, res) => {
     const { duration } = req.body;
@@ -242,6 +226,10 @@ export const createLightDuration = async (connection, req, res) => {
     }
 
     try {
+        // Delete all existing entries in the light_duration table
+        await connection.execute("DELETE FROM light_duration");
+
+        // Insert the new entry
         const [result] = await connection.execute(
             "INSERT INTO light_duration (duration) VALUES (?)",
             [duration]
@@ -253,30 +241,8 @@ export const createLightDuration = async (connection, req, res) => {
     }
 };
 
-export const updateLightDuration = async (connection, req, res) => {
-    const { id } = req.params;
-    const { duration } = req.body;
 
-    if (!duration) {
-        return res.status(400).send("Invalid input data");
-    }
 
-    try {
-        const [result] = await connection.execute(
-            "UPDATE light_duration SET duration = ? WHERE light_duration_ID = ?",
-            [duration, id]
-        );
-
-        if (result.affectedRows === 0) {
-            res.status(404).send("Light duration entry not found");
-        } else {
-            res.send("Light duration entry updated successfully");
-        }
-    } catch (error) {
-        console.error("Failed to update light_duration entry:", error);
-        res.status(500).send("Failed to update light_duration entry");
-    }
-};
 
 export const getColours = async (connection, req, res) => {
     try {
@@ -306,9 +272,9 @@ export const getLogs = async (connection, req, res) => {
 
 export const getSensorStatus = async (connection, req, res) => {
     try {
-        const [rows] = await connection.execute("SELECT sensor_ID, awake FROM alive WHERE sensor_ID = 3");  // Adjust the query as needed
+        const [rows] = await connection.execute("SELECT * FROM alive");  // Adjust the query as needed
         if (rows.length > 0) {
-            res.json(rows[0]);
+            res.json(rows);
         } else {
             res.status(404).send("Sensor not found");
         }
