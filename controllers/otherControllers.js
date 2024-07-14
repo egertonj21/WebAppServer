@@ -116,22 +116,16 @@ export const createSensorLight = async (connection, req, res) => {
 
 export const updateSensorLightColour = async (connection, req, res) => {
     const { LED_strip_ID, range_ID } = req.params;
-    const { colour_name } = req.body;
+    const { colour_ID } = req.body; // Updated to accept colour_ID directly
 
-    if (!colour_name) {
+    if (!colour_ID) {
         return res.status(400).send("Invalid input data");
     }
 
     try {
-        const [[colour]] = await connection.execute("SELECT colour_ID FROM colour WHERE colour_name = ?", [colour_name]);
-
-        if (!colour) {
-            return res.status(404).send("Specified colour does not exist");
-        }
-
         const [result] = await connection.execute(
             "UPDATE sensor_light SET colour_ID = ? WHERE LED_strip_ID = ? AND range_ID = ?",
-            [colour.colour_ID, LED_strip_ID, range_ID]
+            [colour_ID, LED_strip_ID, range_ID]
         );
 
         if (result.affectedRows === 0) {
@@ -144,6 +138,7 @@ export const updateSensorLightColour = async (connection, req, res) => {
         res.status(500).send("Failed to update sensor_light entry");
     }
 };
+
 
 
 export const getSelectedOutput = async (connection, req, res) => {
