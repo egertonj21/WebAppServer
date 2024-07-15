@@ -30,3 +30,49 @@ export const logSensorData = async (connection, req, res) => {
         }
     }
 };
+
+export const updateSensorStatus = async (connection, req, res) => {
+    const { sensor_id, active, awake } = req.body;
+    try {
+        const [rows] = await connection.execute("SELECT 1 FROM alive WHERE sensor_ID = ?", [sensor_id]);
+        if (rows.length === 0) {
+            await connection.execute("INSERT INTO alive (sensor_ID, active, awake) VALUES (?, ?, ?)", [sensor_id, active || 0, awake || 0]);
+            res.status(200).send("Sensor status inserted successfully");
+        } else {
+            if (active !== undefined) {
+                await connection.execute("UPDATE alive SET active = ? WHERE sensor_ID = ?", [active, sensor_id]);
+            }
+            if (awake !== undefined) {
+                await connection.execute("UPDATE alive SET awake = ? WHERE sensor_ID = ?", [awake, sensor_id]);
+            }
+            res.status(200).send("Sensor status updated successfully");
+        }
+    } catch (error) {
+        console.error("Failed to update sensor status:", error);
+        res.status(500).send("Failed to update sensor status");
+    }
+};
+
+export const fetchSensorRanges = async (connection, req, res) => {
+    try {
+        const [rows] = await connection.execute("SELECT range_ID, lower_limit, upper_limit FROM sensor_range");
+        res.json(rows);
+    } catch (error) {
+        console.error("Failed to fetch sensor ranges:", error);
+        res.status(500).send("Failed to fetch sensor ranges");
+    }
+};
+
+export const fetchLightDuration = async (connection, req, res) => {
+    try {
+        const [rows] = await connection.execute("SELECT duration FROM light_duration WHERE light_duration_ID = 1");
+        if (rows.length > 0) {
+            res.json({ duration: rows[0].duration });
+        } else {
+            res.status(404).send("No duration found");
+        }
+    } catch (error) {
+        console.error("Failed to fetch light duration:", error);
+        res.status(500).send("Failed to fetch light duration");
+    }
+};
