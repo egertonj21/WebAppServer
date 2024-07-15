@@ -1,3 +1,5 @@
+
+
 export const updateLEDStrip = async (connection, req, res) => {
     const { id } = req.params;
     const { LED_strip_name, LED_alive, LED_active, colour_ID } = req.body;

@@ -1,3 +1,5 @@
+
+
 export const getActions = async (connection, req, res) => {
     try {
         const [rows] = await connection.execute("SELECT action_ID, sensor_ID, range_ID, note_ID FROM action_table");
@@ -38,7 +40,11 @@ export const getNoteDetails = async (connection, req, res) => {
              WHERE a.sensor_ID = ? AND a.range_ID = ?`,
             [sensor_ID, range_ID]
         );
-        res.json(rows[0]);
+        if (rows.length > 0) {
+            res.json(rows[0]);  // Ensure a single object is returned
+        } else {
+            res.status(404).json({ error: "Note details not found" });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).send("Failed to fetch note details");

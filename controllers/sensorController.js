@@ -1,3 +1,5 @@
+import { broadcast } from "../server.js";
+
 export const getSensors = async (connection, req, res) => {
     try {
         const [rows] = await connection.execute("SELECT sensor_ID, sensor_name FROM sensor");
@@ -10,6 +12,15 @@ export const getSensors = async (connection, req, res) => {
 
 export const logSensorData = async (connection, req, res) => {
     const { sensor_ID, distance } = req.body;
+
+    console.log(`Received payload: sensor_ID=${sensor_ID}, distance=${distance}`);
+
+    // Validate the sensor_ID and distance
+    if (sensor_ID === undefined || distance === undefined) {
+        console.error("Invalid input data: sensor_ID or distance is undefined");
+        return res.status(400).send("Invalid input data: sensor_ID or distance is undefined");
+    }
+
     try {
         await connection.execute("INSERT INTO input (sensor_ID, distance, timestamp) VALUES (?, ?, NOW())", [sensor_ID, distance]);
 
@@ -30,6 +41,7 @@ export const logSensorData = async (connection, req, res) => {
         }
     }
 };
+
 
 export const updateSensorStatus = async (connection, req, res) => {
     const { sensor_id, active, awake } = req.body;
