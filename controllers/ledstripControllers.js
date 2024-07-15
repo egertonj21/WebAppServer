@@ -36,18 +36,28 @@ export const getLEDStrips = async (connection, req, res) => {
 };
 export const updateLedStripStatus = async (connection, req, res) => {
     const { led_strip_name, active, alive, colour_id } = req.body;
+
+    console.log(`Received payload: led_strip_name=${led_strip_name}, active=${active}, alive=${alive}, colour_id=${colour_id}`);
+
+    // Validate the input data
+    if (led_strip_name === undefined || active === undefined || alive === undefined) {
+        console.error("Invalid input data: led_strip_name, active, or alive is undefined");
+        return res.status(400).send("Invalid input data: led_strip_name, active, or alive is undefined");
+    }
+
     try {
         const [rows] = await connection.execute("SELECT 1 FROM LED_strip WHERE LED_strip_name = ?", [led_strip_name]);
         if (rows.length === 0) {
-            if (colour_id === undefined) {
+            let resolved_colour_id = colour_id;
+            if (resolved_colour_id === undefined || resolved_colour_id === null) {
                 const [colourRows] = await connection.execute("SELECT colour_ID FROM colour LIMIT 1");
                 if (colourRows.length === 0) {
                     res.status(500).send("No default colour_ID found");
                     return;
                 }
-                colour_id = colourRows[0].colour_ID;
+                resolved_colour_id = colourRows[0].colour_ID;
             }
-            await connection.execute("INSERT INTO LED_strip (LED_strip_name, LED_alive, LED_active, colour_ID) VALUES (?, ?, ?, ?)", [led_strip_name, alive || 0, active || 0, colour_id]);
+            await connection.execute("INSERT INTO LED_strip (LED_strip_name, LED_alive, LED_active, colour_ID) VALUES (?, ?, ?, ?)", [led_strip_name, alive || 0, active || 0, resolved_colour_id]);
             res.status(200).send("LED strip status inserted successfully");
         } else {
             if (active !== undefined) {
@@ -56,7 +66,7 @@ export const updateLedStripStatus = async (connection, req, res) => {
             if (alive !== undefined) {
                 await connection.execute("UPDATE LED_strip SET LED_alive = ? WHERE LED_strip_name = ?", [alive, led_strip_name]);
             }
-            if (colour_id !== undefined) {
+            if (colour_id !== undefined && colour_id !== null) {
                 await connection.execute("UPDATE LED_strip SET colour_ID = ? WHERE LED_strip_name = ?", [colour_id, led_strip_name]);
             }
             res.status(200).send("LED strip status updated successfully");
@@ -66,6 +76,8 @@ export const updateLedStripStatus = async (connection, req, res) => {
         res.status(500).send("Failed to update LED strip status");
     }
 };
+
+
 
 export const fetchLedStripId = async (connection, req, res) => {
     const { led_strip_name } = req.params;
